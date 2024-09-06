@@ -1,10 +1,6 @@
-// src/app/page.tsx
-const HomePage = () => {
-  return (
-    <div>
-      <h1>Welcome to Velatum Bellum Playtest!</h1>
-    </div>
-  );
-};
+import { redirect } from 'next/navigation';
 
-export default HomePage;
+export default function Home() {
+  // Redirect to the /landing page
+  redirect('/landing');
+}
