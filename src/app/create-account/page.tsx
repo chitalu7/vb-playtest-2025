@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../lib/firebaseConfig'; // Import the configured Firebase auth
-import Link from 'next/link'; // Import Link for navigation to the login page
+import { auth } from '../../lib/firebaseConfig';
+import Link from 'next/link';
 
 const CreateAccountPage = () => {
   const [email, setEmail] = useState('');
@@ -11,34 +11,33 @@ const CreateAccountPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check if passwords match
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setSuccess(''); // Clear success message
+      setError('SUBMISSION DENIED! Passwords do not match');
       return;
     }
 
     setError(''); // Clear previous errors
     setSuccess(''); // Clear previous success message
+    setLoading(true); // Set loading to true
 
     try {
       // Create a new user with Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      setSuccess('Account created successfully!'); // Show success message
-
+      await createUserWithEmailAndPassword(auth, email, password);
+      setSuccess('Account created successfully!');
+      
       // Clear form fields after successful account creation
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-
-      console.log('User created:', userCredential.user);
     } catch (error) {
       setError('Failed to create account: ' + (error as Error).message);
-      setSuccess(''); // Clear success message on error
+    } finally {
+      setLoading(false); // Stop loading state
     }
   };
 
@@ -47,17 +46,15 @@ const CreateAccountPage = () => {
       <div className="bg-smoke-gray p-8 rounded shadow-md w-full max-w-md text-ice-blue">
         <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 p-4 text-red-700 bg-red-100 border border-red-400 rounded">
-            {error}
+        {/* Display success or error message */}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-center" role="alert">
+            <span className="block sm:inline">{success}</span>
           </div>
         )}
-
-        {/* Success Alert */}
-        {success && (
-          <div className="mb-4 p-4 text-green-700 bg-green-100 border border-green-400 rounded">
-            {success}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-center" role="alert">
+            <span className="block sm:inline">{error}</span>
           </div>
         )}
 
@@ -70,6 +67,7 @@ const CreateAccountPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
               required
+              disabled={loading} // Disable input when loading
             />
           </div>
           <div className="mb-4">
@@ -80,6 +78,7 @@ const CreateAccountPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
               required
+              disabled={loading} // Disable input when loading
             />
           </div>
           <div className="mb-4">
@@ -90,14 +89,17 @@ const CreateAccountPage = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
               required
+              disabled={loading} // Disable input when loading
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-pale-amber text-shadow-black p-2 rounded hover:bg-ice-blue hover:text-shadow-black"
+            className={`w-full p-2 rounded ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-pale-amber text-shadow-black p-2 rounded hover:bg-ice-blue hover:text-shadow-black'}`}
+            disabled={loading} // Disable button when loading
           >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
@@ -114,196 +116,6 @@ const CreateAccountPage = () => {
 };
 
 export default CreateAccountPage;
-
-// import { useState } from 'react';
-// import { createUserWithEmailAndPassword } from 'firebase/auth';
-// import { auth } from '../../lib/firebaseConfig'; // Import the configured Firebase auth
-// import Link from 'next/link'; // Import Link for navigation to the login page
-
-// const CreateAccountPage = () => {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [confirmPassword, setConfirmPassword] = useState('');
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-
-//   const handleCreateAccount = async (e: React.FormEvent) => {
-//     e.preventDefault();
-    
-//     // Check if passwords match
-//     if (password !== confirmPassword) {
-//       setError('Passwords do not match');
-//       return;
-//     }
-
-//     setError(''); // Clear previous errors
-//     setSuccess(''); // Clear previous success message
-
-//     try {
-//       // Create a new user with Firebase Authentication
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-//       setSuccess('Account created successfully!');
-
-//       // Clear form fields after successful account creation
-//       setEmail('');
-//       setPassword('');
-//       setConfirmPassword('');
-
-//       console.log('User created:', userCredential.user);
-//     } catch (error) {
-//       setError('Failed to create account: ' + (error as Error).message);
-//     }
-//   };
-
-//   return (
-//     <div className="relative min-h-screen flex items-center justify-center bg-shadow-black">
-//       <div className="bg-smoke-gray p-8 rounded shadow-md w-full max-w-md text-ice-blue">
-//         <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
-//         <form onSubmit={handleCreateAccount}>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Email</label>
-//             <input
-//               type="email"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Password</label>
-//             <input
-//               type="password"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Confirm Password</label>
-//             <input
-//               type="password"
-//               value={confirmPassword}
-//               onChange={(e) => setConfirmPassword(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-
-//           {error && <p className="text-red-500 mb-4">{error}</p>}
-//           {success && <p className="text-green-500 mb-4">{success}</p>}
-
-//           <button
-//             type="submit"
-//             className="w-full bg-pale-amber  text-shadow-black p-2 rounded hover:bg-ice-blue hover:text-shadow-black"
-//           >
-
-//             Create Account
-//           </button>
-//         </form>
-
-//         {/* Link to login page */}
-//         <div className="mt-4 text-center">
-//           <p>Already have an account?</p>
-//           <Link href="/login" className="text-blood-orange hover:underline">
-//             Login here
-//           </Link>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default CreateAccountPage;
-
-// "use client";
-
-// import { useState } from 'react';
-// import { createUserWithEmailAndPassword } from 'firebase/auth';
-// import { auth } from '../lib/firebaseConfig'; // Import the configured Firebase auth
-
-// const CreateAccountPage = () => {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [confirmPassword, setConfirmPassword] = useState('');
-//   const [error, setError] = useState('');
-//   const [success, setSuccess] = useState('');
-
-//   const handleCreateAccount = async (e: React.FormEvent) => {
-//     e.preventDefault();
-    
-//     // Check if passwords match
-//     if (password !== confirmPassword) {
-//       setError('Passwords do not match');
-//       return;
-//     }
-
-//     setError(''); // Clear previous errors
-//     setSuccess(''); // Clear previous success message
-
-//     try {
-//       // Create a new user with Firebase Authentication
-//       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-//       setSuccess('Account created successfully!');
-//       console.log('User created:', userCredential.user);
-//     } catch (error) {
-//       setError('Failed to create account: ' + (error as Error).message);
-//     }
-//   };
-
-//   return (
-//     <div className="relative min-h-screen flex items-center justify-center bg-shadow-black">
-//       <div className="bg-smoke-gray p-8 rounded shadow-md w-full max-w-md text-ice-blue">
-//         <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
-//         <form onSubmit={handleCreateAccount}>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Email</label>
-//             <input
-//               type="email"
-//               value={email}
-//               onChange={(e) => setEmail(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Password</label>
-//             <input
-//               type="password"
-//               value={password}
-//               onChange={(e) => setPassword(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-ice-blue">Confirm Password</label>
-//             <input
-//               type="password"
-//               value={confirmPassword}
-//               onChange={(e) => setConfirmPassword(e.target.value)}
-//               className="w-full p-2 border rounded bg-shadow-black text-ice-blue"
-//               required
-//             />
-//           </div>
-
-//           {error && <p className="text-red-500 mb-4">{error}</p>}
-//           {success && <p className="text-green-500 mb-4">{success}</p>}
-
-//           <button
-//             type="submit"
-//             className="w-full bg-blood-orange text-shadow-black p-2 rounded hover:bg-ice-blue hover:text-shadow-black"
-//           >
-//             Create Account
-//           </button>
-//         </form>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default CreateAccountPage;
 
 
 
