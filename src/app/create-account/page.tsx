@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../lib/firebaseConfig'; // Import the configured Firebase auth
+import { auth } from '../../lib/firebaseConfig'; // Import the configured Firebase auth
 import Link from 'next/link'; // Import Link for navigation to the login page
 
 const CreateAccountPage = () => {

@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebaseConfig'; // Import Firebase Auth
+import { auth } from '../lib/firebaseConfig'; // Import Firebase Auths
 
 interface ProtectedRouteProps {
   children: ReactNode;
