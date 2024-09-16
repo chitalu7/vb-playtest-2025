@@ -169,7 +169,7 @@ export default JoinSession;
 
 //       if (snapshot.exists() && snapshot.val().password === sessionPassword) {
 //         // If session exists and password is correct, navigate to Assassin selection page
-//         router.push(`/assassin-selection?sessionName=${sessionName}`);
+//         router.push(`/?sessionName=${sessionName}`);
 //       } else {
 //         setError('Session not found or incorrect access key. Please try again.');
 //       }
