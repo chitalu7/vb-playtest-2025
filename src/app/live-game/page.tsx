@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ref, onValue } from 'firebase/database';
+import { ref, get, onValue } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, database } from '../../lib/firebaseConfig';
-import Navbar from '../../components/Navbar';
+import { auth, database } from '../../lib/firebaseConfig'; // Assuming firebaseConfig is already set up
+import Navbar from '../../components/Navbar'; // Assuming Navbar is a reusable component
 
 interface Player {
   playerName: string;
   assassin: string;
 }
 
-const LiveGame = () => {
+const LiveGameContent = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,32 +21,28 @@ const LiveGame = () => {
   const sessionName = searchParams.get('sessionName');
 
   useEffect(() => {
-    // Listen for authentication state changes
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push('/login');
         return;
       }
 
-      const playerName = user.email?.split('@')[0];
+      const playerName = user.email?.split('@')[0]; 
 
       try {
-        const sessionRef = ref(database, `gameSessions/${sessionName}/players`);
+        const sessionRef = ref(database, `gameSessions/${sessionName}`);
+        onValue(sessionRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const sessionData = snapshot.val();
+            const playersData = sessionData.players || [];
+            setPlayers(playersData);
 
-        // Listen for real-time changes to the players node
-        const unsubscribePlayers = onValue(sessionRef, (snapshot) => {
-          const playersData = snapshot.val();
-          if (playersData) {
-            const playersArray = Object.values(playersData) as Player[];
-            setPlayers(playersArray);
-
-            // Update current player if it matches the logged-in user
-            const current = playersArray.find((p: Player) => p.playerName === playerName);
-            setCurrentPlayer(current || null);
+            const player = playersData.find((p: Player) => p.playerName === playerName);
+            setCurrentPlayer(player || null);
+          } else {
+            router.push('/');
           }
         });
-
-        return () => unsubscribePlayers(); // Unsubscribe from the listener when the component unmounts
       } catch (error) {
         console.error("Error fetching session data:", error);
         router.push('/');
@@ -55,7 +51,7 @@ const LiveGame = () => {
       }
     });
 
-    return () => unsubscribeAuth(); // Unsubscribe from auth state changes when the component unmounts
+    return () => unsubscribe();
   }, [sessionName, router]);
 
   if (loading) {
@@ -76,7 +72,7 @@ const LiveGame = () => {
 
   return (
     <div>
-      <Navbar />
+      <Navbar /> 
 
       <header className="bg-blood-orange py-4">
         <h1 className="text-3xl font-bold text-center text-shadow-black">
@@ -85,17 +81,11 @@ const LiveGame = () => {
       </header>
 
       <main className="py-8 px-4 max-w-7xl mx-auto">
-        {/* Current Player Info */}
         <div className="bg-smoke-gray p-6 rounded-lg mb-6">
-          <h2 className="text-2xl font-bold text-shadow-black">
-            Welcome, {currentPlayer.playerName}
-          </h2>
-          <p className="text-lg text-ice-blue">
-            You have chosen: <strong>{currentPlayer.assassin}</strong>
-          </p>
+          <h2 className="text-2xl font-bold text-shadow-black">Welcome, {currentPlayer.playerName}</h2>
+          <p className="text-lg text-ice-blue">You have chosen: <strong>{currentPlayer.assassin}</strong></p>
         </div>
 
-        {/* Player List */}
         <div className="grid grid-cols-4 gap-4">
           {players.map((player, index) => (
             <div
@@ -114,6 +104,12 @@ const LiveGame = () => {
   );
 };
 
+const LiveGame = () => (
+  <Suspense fallback={<div className="flex items-center justify-center h-screen"><p className="text-2xl text-gray-600">Loading...</p></div>}>
+    <LiveGameContent />
+  </Suspense>
+);
+
 export default LiveGame;
 
 
@@ -121,10 +117,10 @@ export default LiveGame;
 
 // import { useState, useEffect } from 'react';
 // import { useRouter, useSearchParams } from 'next/navigation';
-// import { ref, onValue, get } from 'firebase/database';
+// import { ref, onValue } from 'firebase/database';
 // import { onAuthStateChanged } from 'firebase/auth';
-// import { auth, database } from '../../lib/firebaseConfig'; // Firebase config
-// import Navbar from '../../components/Navbar'; // Navbar component
+// import { auth, database } from '../../lib/firebaseConfig';
+// import Navbar from '../../components/Navbar';
 
 // interface Player {
 //   playerName: string;
@@ -140,43 +136,41 @@ export default LiveGame;
 //   const sessionName = searchParams.get('sessionName');
 
 //   useEffect(() => {
-//     // Listen for changes in the authentication state
+//     // Listen for authentication state changes
 //     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
 //       if (!user) {
-//         // Redirect to login if no user is found
 //         router.push('/login');
 //         return;
 //       }
 
-//       const playerName = user.email?.split('@')[0]; // Extract the part of the email before '@'
+//       const playerName = user.email?.split('@')[0];
 
-//       // Fetch players data and listen for real-time updates
 //       try {
 //         const sessionRef = ref(database, `gameSessions/${sessionName}/players`);
 
-//         // Listen for real-time updates on the players data
+//         // Listen for real-time changes to the players node
 //         const unsubscribePlayers = onValue(sessionRef, (snapshot) => {
 //           const playersData = snapshot.val();
 //           if (playersData) {
 //             const playersArray = Object.values(playersData) as Player[];
 //             setPlayers(playersArray);
 
-//             // Set the current player based on logged-in user
-//             const player = playersArray.find((p: Player) => p.playerName === playerName);
-//             setCurrentPlayer(player || null);
+//             // Update current player if it matches the logged-in user
+//             const current = playersArray.find((p: Player) => p.playerName === playerName);
+//             setCurrentPlayer(current || null);
 //           }
 //         });
 
-//         return () => unsubscribePlayers(); // Clean up listener when component unmounts
+//         return () => unsubscribePlayers(); // Unsubscribe from the listener when the component unmounts
 //       } catch (error) {
 //         console.error("Error fetching session data:", error);
-//         router.push('/'); // Redirect to home on error
+//         router.push('/');
 //       } finally {
-//         setLoading(false); // Set loading to false once data is fetched
+//         setLoading(false);
 //       }
 //     });
 
-//     return () => unsubscribeAuth(); // Clean up the auth listener
+//     return () => unsubscribeAuth(); // Unsubscribe from auth state changes when the component unmounts
 //   }, [sessionName, router]);
 
 //   if (loading) {
@@ -199,7 +193,6 @@ export default LiveGame;
 //     <div>
 //       <Navbar />
 
-//       {/* Game Header */}
 //       <header className="bg-blood-orange py-4">
 //         <h1 className="text-3xl font-bold text-center text-shadow-black">
 //           Live Game Session: {sessionName}
@@ -209,7 +202,9 @@ export default LiveGame;
 //       <main className="py-8 px-4 max-w-7xl mx-auto">
 //         {/* Current Player Info */}
 //         <div className="bg-smoke-gray p-6 rounded-lg mb-6">
-//           <h2 className="text-2xl font-bold text-shadow-black">Welcome, {currentPlayer.playerName}</h2>
+//           <h2 className="text-2xl font-bold text-shadow-black">
+//             Welcome, {currentPlayer.playerName}
+//           </h2>
 //           <p className="text-lg text-ice-blue">
 //             You have chosen: <strong>{currentPlayer.assassin}</strong>
 //           </p>
@@ -235,5 +230,4 @@ export default LiveGame;
 // };
 
 // export default LiveGame;
-
 
